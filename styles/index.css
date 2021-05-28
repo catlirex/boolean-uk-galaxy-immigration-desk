@@ -1,0 +1,70 @@
+.starship,
+.people {
+  display: grid;
+  grid-auto-flow: column;
+  justify-content: space-between;
+  padding: 5px 15px;
+  border: 2px dotted navy;
+}
+.info-section {
+  display: grid;
+  place-items: center;
+}
+
+.info-card {
+  place-self: center;
+  padding: 20px;
+  width: fit-content;
+  border: 3px solid oldlace;
+  font-family: monospace;
+  font-size: 1.5rem;
+}
+
+.detail-list {
+  list-style: none;
+}
+
+.action-container,
+.approval-form {
+  display: grid;
+  grid-gap: 10px;
+  margin: 50px;
+}
+
+h3 {
+  background-color: rgb(157, 200, 235);
+  padding: 10px;
+  text-align: center;
+}
+
+.status {
+  background-color: rgba(0, 128, 0, 0.386);
+  color: rgb(26, 75, 26);
+  font-weight: bolder;
+  border-radius: 5px;
+  padding: 20px;
+  margin: 30px 0;
+}
+
+.to-onboard {
+  display: grid;
+  grid-gap: 10px;
+}
+
+.to-onboard li {
+  display: grid;
+  grid-auto-flow: column;
+  padding: 5px 10px;
+  border: 2px dotted grey;
+  justify-content: space-between;
+}
+
+.list-section {
+  width: 540px;
+  height: 495px;
+  overflow: scroll;
+}
+
+.to-onboard button {
+  width: 100px;
+}
