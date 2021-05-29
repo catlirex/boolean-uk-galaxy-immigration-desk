@@ -11,7 +11,43 @@ let state={
     selectedShipCrewList: [],
     toBeOnboard: [],
     removedCrew:[]
-    
+}
+
+function setState(newState) {
+    state = { ...state, ...newState };
+    renderCrew();
+}
+
+function setStateStarShip(newState) {
+    state = { ...state, ...newState };
+    renderShip();
+}
+
+function addPeopleToState(dataFromServer){
+    for(applicant of dataFromServer.results){
+        applicant.approved = false
+
+        setState({people:[...state.people, applicant]})
+    }
+}
+
+function addReadyStarShipsToState(people){
+    let starshipsOfApplicant = []
+    for (starship of people.starships){
+       let starshipDetail = state.starships.find(function(target){
+            return target.url === starship
+        })
+
+        starshipCheck = state.starshipsReadyToLaunch.findIndex(function(target){
+            return target === starshipDetail.name
+        })
+        
+        if (starshipCheck === -1){
+        starshipsOfApplicant = [...starshipsOfApplicant, starshipDetail.name]
+        }
+    }
+    setState({starshipsReadyToLaunch:[...state.starshipsReadyToLaunch, ...starshipsOfApplicant]})
+    // state.starshipsReadyToLaunch = [...state.starshipsReadyToLaunch, ...starshipsOfApplicant]
 }
 
 function getPeople(){
@@ -21,18 +57,15 @@ function getPeople(){
         listSection.innerHTML=""
         addPeopleToState(data)
         getAllPeople(data)
-        
     })
 }
 
 function getAllPeople(data){
     if (data.next !== null){
-        console.log(data.next)
         fetch(`${data.next}`)
         .then(response => response.json())
         .then(function(data){
             getAllPeople(data)
-            console.log(data)
             addPeopleToState(data)
         })
     }
@@ -40,18 +73,6 @@ function getAllPeople(data){
         renderAllPeople()
         getPlants()
         getStarship()
-    }
-}
-
-function setState(newState) {
-    state = { ...state, ...newState };
-    renderCrew();
-}
-
-function addPeopleToState(dataFromServer){
-    for(people of dataFromServer.results){
-        people.approved = false
-        state.people = [...state.people, people]
     }
 }
 
@@ -63,7 +84,8 @@ function getPlants(){
             let plantIndex = state.planets.findIndex(function(planet){
                     return  planet.name === planetData.name
                 })
-            if(plantIndex === -1) state.planets = [...state.planets, planetData]
+            if(plantIndex === -1) setState({planets:[...state.planets, planetData]})
+            // state.planets = [...state.planets, planetData]
         })
     } 
 }
@@ -77,9 +99,9 @@ function getStarship(){
             let starshipIndex = state.starships.findIndex(function(target){
                     return  target.name === starshipData.name
                 })
-            if(starshipIndex === -1) state.starships = [...state.starships, starshipData]
+            if(starshipIndex === -1) setState({starships:[...state.starships, starshipData]})
+            // state.starships = [...state.starships, starshipData]
         })
-        
     } 
 }
 
@@ -109,7 +131,6 @@ function renderPeople(people){
     let viewBtn = document.createElement("button")
     viewBtn.innerText = "View"
     viewBtn.addEventListener("click", function(){
-        console.log(people)
         renderPeopleInfo(people)
         if(people.approved === false) renderApprovalForm(people)
         if(people.approved === true) renderApprovalResult(people)
@@ -202,40 +223,19 @@ function renderApprovalForm(people){
         ? approvalDetail.terroristActivity = true 
         : approvalDetail.terroristActivity = false
 
-        let peopleIndex = state.people.findIndex(function(applicant){
-            return people.name === applicant.name
+        let updatedPeople = {...people, approvalDetail, approved:true}
+        let statePeopleWithoutPeople = state.people.filter(function(target){
+            return target.name !== people.name
         })
 
-        state.people[peopleIndex]= {...state.people[peopleIndex], approvalDetail:approvalDetail, approved: true}
-        state.approvedApplicant = [...state.approvedApplicant, people.name]
+        statePeopleWithoutPeople.push(updatedPeople)
+
+        setState({people:[...statePeopleWithoutPeople], approvedApplicant:[...state.approvedApplicant, people.name]})
         addReadyStarShipsToState(people)
-        renderCrew()
         
         approvalForm.reset()
         submitBtn.disabled = true
-
-        // let updatedPeople = [...state.people,{...people, approvalDetail:approvalDetail, approved: true}] 
-        // console.log(state)
-        //  setState(people =updatedPeople)
     })
-}
-
-function addReadyStarShipsToState(people){
-    let starshipsOfApplicant = []
-    for (starship of people.starships){
-       let starshipDetail = state.starships.find(function(target){
-            return target.url === starship
-        })
-
-        starshipCheck = state.starshipsReadyToLaunch.findIndex(function(target){
-            return target === starshipDetail.name
-        })
-        
-        if (starshipCheck === -1){
-        starshipsOfApplicant = [...starshipsOfApplicant, starshipDetail.name]
-        }
-    }
-    state.starshipsReadyToLaunch = [...state.starshipsReadyToLaunch, ...starshipsOfApplicant]
 }
 
 function renderApprovalResult(people){
@@ -278,7 +278,6 @@ function renderPeopleInfo(people){
     let peoplePlanet = state.planets.find(function(planet){
         return planet.url === people.homeworld
     })
-    console.log(peoplePlanet)
     let homeWorldName= peoplePlanet.name
     
     let homeWorld = document.createElement("li")
@@ -287,18 +286,6 @@ function renderPeopleInfo(people){
     detailUl.append(gender, DOB, height, mass, homeWorld)
     infoDiv.append(nameH2, detailUl)
     infoSection.append(infoDiv)
-}
-
-function enableSideBarBtn(){
-    let crewDeck = document.getElementById("crew-deck-btn")
-    crewDeck.addEventListener("click", function(){
-        renderCrew()
-    })
-
-    let starshipHangar = document.getElementById("starship-hangar-btn")
-    starshipHangar.addEventListener("click", function(){
-        renderShip()
-    })
 }
 
 function renderAllStarships(){
@@ -365,19 +352,18 @@ function renderStarShipCrewList(starshipDetail){
     state.selectedShipCrewList = []
     state.toBeOnboard = []
 
-    console.log(starshipDetail)
     for (applicant of state.approvedApplicant){
         applicantDetail = state.people.find(function(target){
             return target.name === applicant
         })
         for (starship of applicantDetail.starships){
-            if (starship === starshipDetail.url) state.selectedShipCrewList = [...state.selectedShipCrewList, applicantDetail.name]
+            if (starship === starshipDetail.url) setStateStarShip({selectedShipCrewList:[...state.selectedShipCrewList, applicantDetail.name]})
+            // state.selectedShipCrewList = [...state.selectedShipCrewList, applicantDetail.name]
         }
 
-        if(applicantDetail.starships.length === 0) state.toBeOnboard = [...state.toBeOnboard, applicantDetail.name]
+        if(applicantDetail.starships.length === 0) setStateStarShip({toBeOnboard:[...state.toBeOnboard, applicantDetail.name]})
+        // state.toBeOnboard = [...state.toBeOnboard, applicantDetail.name]
     }
-    
-
     renderStarShipAction(starshipDetail)
     
 }
@@ -397,10 +383,8 @@ function renderStarShipAction(starshipDetail){
     let launchBtn = document.createElement("button")
     launchBtn.innerText = "Departure Now"
     launchBtn.addEventListener("click",function(){
-        
-        state.removedCrew = [...state.removedCrew, ...state.selectedShipCrewList]
+        setStateStarShip({removedCrew:[...state.removedCrew, ...state.selectedShipCrewList]})
         removeStarShip(starshipDetail, removeApplicant())
-
     })
 
     let toBeOnboardUl = document.createElement("ul")
@@ -411,11 +395,8 @@ function renderStarShipAction(starshipDetail){
 
     for(crew of state.toBeOnboard){
         let peopleLi = renderToBeOnboardList(crew)
-        
         toBeOnboardUl.append(peopleLi)
     }
-
-    
 
     actionContainer.append(starshipName, crewPara,launchBtn, toBeOnboardUl)
 }
@@ -427,10 +408,13 @@ function renderToBeOnboardList(crew){
     let addBtn = document.createElement("button")
     addBtn.innerText = "Onboard"
     addBtn.addEventListener("click", function(){
-        state.selectedShipCrewList = [...state.selectedShipCrewList, crew]
-        state.toBeOnboard = [...state.toBeOnboard.filter(function(target){
+        setStateStarShip({selectedShipCrewList:[...state.selectedShipCrewList, crew], toBeOnboard :[...state.toBeOnboard.filter(function(target){
             return target !== crew
-        })]
+        })]})
+        // state.selectedShipCrewList = [...state.selectedShipCrewList, crew]
+        // state.toBeOnboard = [...state.toBeOnboard.filter(function(target){
+        //     return target !== crew
+        // })]
         renderStarShipAction(starshipDetail)
         })
 
@@ -465,8 +449,10 @@ function removeStarShip(starshipDetail, removedArray){
             })
         }
     }
-    state.starshipsReadyToLaunch = newStarShipArray
-    renderShip()
+
+    setStateStarShip({starshipsReadyToLaunch:newStarShipArray})
+    // state.starshipsReadyToLaunch = newStarShipArray
+    // renderShip()
 }
 
 function  removeApplicant(){
@@ -476,14 +462,21 @@ function  removeApplicant(){
             return people !== crew
         })
     }
-    state.approvedApplicant = removedArray
+    setStateStarShip({approvedApplicant:removedArray})
+    // state.approvedApplicant = removedArray
     return removedArray
 }
 
-function runPage(){
-    renderCrew()
-    getPeople() 
-    enableSideBarBtn()
+function enableSideBarBtn(){
+    let crewDeck = document.getElementById("crew-deck-btn")
+    crewDeck.addEventListener("click", function(){
+        renderCrew()
+    })
+
+    let starshipHangar = document.getElementById("starship-hangar-btn")
+    starshipHangar.addEventListener("click", function(){
+        renderShip()
+    })
 }
 
 function renderCrew(){
@@ -491,7 +484,7 @@ function renderCrew(){
     actionSection.innerHTML = ""
     listSection.innerHTML = ""
     renderAllPeople()
-    console.log("renderCrew() log State:", state)
+    console.log("log State:", state)
 }
 
 function renderShip(){
@@ -499,6 +492,13 @@ function renderShip(){
     actionSection.innerHTML = ""
     listSection.innerHTML = ""
     renderAllStarships()
+    console.log("log State:", state)
+}
+
+function runPage(){
+    renderCrew()
+    getPeople() 
+    enableSideBarBtn()
 }
 
 runPage()
